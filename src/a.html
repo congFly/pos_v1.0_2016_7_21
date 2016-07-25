@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        let tags = [
+            'ITEM000001',
+            'ITEM000001-2.5',
+            'ITEM000003-2',
+            'ITEM000005',
+            'ITEM000005',
+            'ITEM000005',
+        ];
+        function loadAllItems() {
+            return [
+                {
+                    barcode: 'ITEM000000',
+                    name: '可口可乐',
+                    unit: '瓶',
+                    price: 3.00
+                },
+                {
+                    barcode: 'ITEM000001',
+                    name: '雪碧',
+                    unit: '瓶',
+                    price: 3.00
+                },
+                {
+                    barcode: 'ITEM000002',
+                    name: '苹果',
+                    unit: '斤',
+                    price: 5.50
+                },
+                {
+                    barcode: 'ITEM000003',
+                    name: '雨伞',
+                    unit: '把',
+                    price: 30.00
+                }
+            ];
+        }
+        function loadPromotions() {
+            return [{
+                type: 'BUY_TWO_GET_ONE_FREE',
+                barcodes: [
+                    'ITEM000000',
+                    'ITEM000001',
+                    'ITEM000002'
+                ]
+            }, {
+                type: 'other',
+                barcodes: [
+                    'ITEM000003'
+                ]
+            }];
+        }
+        //        let allItems = loadAllItems();
+        //        let promotions = loadPromotions();
+
+        function formatTags(tags) {
+            let barcodes = tags.map(function (tag) {
+                let bar = tag.split("-");
+                return {
+                    barcode: bar[0],
+                    amount: parseFloat(bar[1]) || 1
+                }
+            });
+
+            return barcodes;
+        }
+        function mergerBarcodes(barcodes) {
+            let mergeBarcodes = [];
+            for (let i = 0; i < barcodes.length; i++) {
+                let existItems = mergeBarcodes.find(
+                        function (item) {
+                            if (item.barcode === barcodes[i].barcode) {
+                                return item;
+                            }
+                        }
+                );
+                if (existItems) {
+                    existItems.amount += barcodes[i].amount;
+                } else {
+                    mergeBarcodes.push(Object.assign({}, barcodes[i], {amount: barcodes[i].amount}));
+                }
+            }
+            return mergeBarcodes;
+        }
+        function matchPromotions(mergeBarcodes, promotions) {
+            let itemsPromotions = [];
+            for (let j = 0; j < promotions.length; j++) {
+                let temp = promotions[j].barcodes;
+                for (let k = 0; k < temp.length; k++) {
+                    for (let i = 0; i < mergeBarcodes.length; i++) {
+                        if (mergeBarcodes[i].barcode === temp[k]) {
+                            itemsPromotions.push(Object.assign({}, mergeBarcodes[i], {type: promotions[j].type}))
+                        }
+                    }
+                }
+            }
+            return itemsPromotions;
+        }
+        function matchItems(itemsPromotions, allItems) {
+            let itemList = [];
+            for (let i = 0; i < itemsPromotions.length; i++) {
+                for (let j = 0; j < allItems.length; j++) {
+                    if (itemsPromotions[i].barcode === allItems[j].barcode) {
+                        itemList=itemsPromotions.push(Object.assign({}, allItems[j]))
+                    }
+                }
+            }
+            return itemList;
+        }
+
+
+        function getCartItems(mergedBaarcodes, allItems) {
+            let cartItemsCount = [];
+            for (let i = 0; i < mergedBaarcodes.length; i++) {
+                for (let j = 0; j < allItems.length; j++) {
+                    if (mergedBaarcodes[i].barcode === allItems[j].barcode) {
+                        cartItemsCount.push(Object.assign({}, allItems[j], {amount: mergedBaarcodes[i].amount}));
+                    }
+                }
+            }
+
+            return cartItemsCount;
+        }
+
+        function getDiscountSubtotal(itemList) {
+            let discountSubtotal = 0;
+            for (let i = 0; i < itemList.length; i++) {
+                if (itemList[i].type === "BUY_TWO_GET_ONE_FREE") {
+                    discountSubtotal = itemList[i].price * itemList[i].amount / 3;
+                    discountSubtotal -= itemList[i].price * Math.floor(itemList[i].amount) / 3;
+                } else {
+                    discountSubtotal = itemList[i].price * itemList[i].amount;
+                }
+                discountSubtotal.push(Object.assign({}, itemList[i], {discountSubtotal: discountSubtotal}))
+            }
+            return discountSubtotal;
+        }
+
+        function getSubtotal(itemList) {
+            let subtotal = 0;
+            for (let i = 0; i < itemList.length; i++) {
+                subtotal = itemList[i].price * itemList[i].amount;
+                subtotal.push(Object.assign({}, itemList[i], {subtotal: subtotal}))
+            }
+            console.log(subtotal);
+            return subtotal;
+        }
+
+        function getSaveTotal(subtotal) {
+            let saveTotal = 0;
+            for (let i = 0; i < subtotal.length; i++) {
+                saveTotal = subtotal[i].subtotal - subtotal[i].discountSubtotal;
+            }
+            return saveTotal;
+        }
+
+        function getTotal(discountSubtotal) {
+            let total = 0;
+            for (let i = 0; i < discountSubtotal.length; i++) {
+                total += discountSubtotal[i];
+            }
+            return total;
+        }
+
+        function print(subtotal, saveTotal, total) {
+            for (let i = 0; i < subtotal.length; i++) {
+                console.log("商品：" + subtotal[i].name + ",单价："
+                        + subtotal[i].price + "元," + "件数："
+                        + "" + subtotal[i].amount + ",小计：" + subtotal[i].discountSubtotal + "元");
+                console.log("节省：" + saveTotal + "元");
+                console.log("总价：" + total + "元");
+            }
+        }
+        //
+        //        function printReceipt(tags) {
+        //            let allItems = loadAllItems();
+        //            let promotions = loadPromotions();
+        //            let barcodes = formatTags(tags);
+        //            let mergeBarcodes = mergerBarcodes(barcodes);
+        //            let itemsPromotions=matchPromotions(mergeBarcodes, promotions);
+        //            let itemList=matchItems(itemsPromotions,allItems);
+        //            let discountSubtotal=getDiscountSubtotal(itemList);
+        //            let subtotal=getSubtotal(itemList);
+        //            let saveTotal=getSaveTotal(subtotal);
+        //            print(discountSubtotal,subtotal,saveTotal);
+        //        }
+        function print(tags) {
+            let allItems = loadAllItems();
+            let promotions = loadPromotions();
+            let barcodes = formatTags(tags);
+            let mergeBaarcodes = mergerBarcodes(barcodes);
+            let itemsPromotions = matchPromotions(mergeBaarcodes, promotions);
+            let itemList=matchItems(itemsPromotions,allItems);
+            console.log(itemList);
+//            console.log(JSON.stringify(matchPromotions(mergeBarcodes, promotions),null,4));
+        }
+        print(tags);
+
+    </script>
+</head>
+<body>
+
+</body>
+</html>
